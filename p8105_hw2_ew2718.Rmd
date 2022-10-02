@@ -4,27 +4,81 @@ author: "Emma Warshaw"
 date: "2022-10-01"
 output: github_document
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r}
+library(tidyverse)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+#Problem 1
+```{r}
+nyc_transit_raw = 
+  read_csv("./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv",
+           col_types = cols(Route8 = "c", Route9 = "c", Route10 = "c", Route11 = "c")) %>%  
+janitor::clean_names() %>% 
+  select(
+    line, station_name, station_latitude, station_longitude, route1:route11, entry, vending, entrance_type, ada) %>% 
+  mutate(
+    entry = ifelse(entry == "Yes", TRUE, FALSE) 
+  ) %>% 
+nyc_transit_raw
 ```
 
-## Including Plots
+Is this data tidy? 
+It's not tidy.  The route numbers should have some kind of numeric value instead of the "NA" that's in there now.  It would be cleaner to have "route" as a variable and fill in information with the route number.  Need to rotate the columns from wide to long.
 
-You can also embed plots, for example:
+Answer the following questions using these data: 
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+How many distinct stations are there? 
+
+Isolate for distinct pairs based on line and staion name variables: 
+
+```{r}
+nyc_transit_raw %>% 
+  select(line, station_name) %>% 
+  distinct
+```
+There are 465 distinct stations. 
+
+How many stations are ADA compliant? 
+
+Isolate in a similar way now, this time filtering for ada compliance.
+
+```{r}
+nyc_transit_raw %>% 
+  filter(ada == TRUE) %>% 
+  select(line, station_name) %>% 
+  distinct
+```
+There are 84 stations that meet this criteria
+
+What proportion of station entrances / exits without vending allow entrance? 
+
+```{r}
+nyc_transit_raw %>% 
+  filter(vending == "NO") %>% 
+  pull(entry) %>% 
+  mean
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Reformat data so that route number and route name are distinct variables. How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
+```{r}
+nyc_transit_raw %>% 
+  pivot_longer(
+    route1:route11,
+    names_to = "route_num",
+    values_to = "route") %>% 
+  filter(route == "A") %>% 
+  select(station_name, line) %>% 
+  distinct
+
+nyc_transit_raw %>% 
+  pivot_longer(
+    route1:route11,
+    names_to = "route_num",
+    values_to = "route") %>% 
+  filter(route == "A", ada == TRUE) %>% 
+  select(station_name, line) %>% 
+  distinct
+```
+
+
+
