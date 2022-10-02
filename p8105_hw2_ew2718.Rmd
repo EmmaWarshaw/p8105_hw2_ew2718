@@ -96,12 +96,23 @@ Read and clean the Mr. Trash Wheel sheet:
 
 --> (4) round the number of sports balls to the nearest integer and converts the result to an integer variable (using as.integer)
 
+Use a similar process to import, clean, and organize the data for Professor Trash Wheel, and combine this with the Mr. Trash Wheel dataset to produce a single tidy dataset. To keep track of which Trash Wheel is which, you may need to add an additional variable to both datasets before combining.
+
 ```{r}
-#Part 1
 mr_trash = read_excel("./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = "Mr. Trash Wheel") %>%
   janitor::clean_names() %>%
   select(-(x15:x17)) %>%
-  drop_na(dumpster)
+  drop_na(dumpster) %>%
+  drop_na(month) %>% 
+  mutate(
+    sports_balls = round(sports_balls, digits = 0)) %>% 
+  mutate(which_trash = "Mr. Trash")
+
+#start on professor trash
+prof_trash = read_excel("./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = "Professor Trash Wheel") %>% 
+  janitor::clean_names() %>%
+  drop_na(dumpster) %>%
+  mutate(which_trash = "Prof. Trash")
 ```
 
-
+  
