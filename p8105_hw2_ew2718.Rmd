@@ -106,13 +106,18 @@ mr_trash = read_excel("./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", shee
   drop_na(month) %>% 
   mutate(
     sports_balls = round(sports_balls, digits = 0)) %>% 
-  mutate(which_trash = "Mr. Trash")
+  mutate(which_trash = "Mr. Trash") %>% 
+  select(which_trash, everything())
 
 #start on professor trash
 prof_trash = read_excel("./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = "Professor Trash Wheel") %>% 
   janitor::clean_names() %>%
   drop_na(dumpster) %>%
-  mutate(which_trash = "Prof. Trash")
+  mutate(which_trash = "Prof. Trash") %>% 
+  select(which_trash, everything())
+
+#let's combine the data sets
+trash_data = full_join(mr_trash, prof_trash, by = "which_trash")
 ```
 
   
