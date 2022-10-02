@@ -80,5 +80,28 @@ nyc_transit_raw %>%
   distinct
 ```
 
+#Problem 2
+We'll be using an excel file, so load in the appropriate library: 
+
+```{r}
+library(readxl)
+```
+
+Read and clean the Mr. Trash Wheel sheet: 
+--> (1) specify the sheet in the Excel file and to omit non-data entries (rows with notes / figures; columns containing notes) using arguments in read_excel
+
+--> (2) use reasonable variable names
+
+--> (3) omit rows that do not include dumpster-specific data
+
+--> (4) round the number of sports balls to the nearest integer and converts the result to an integer variable (using as.integer)
+
+```{r}
+#Part 1
+mr_trash = read_excel("./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = "Mr. Trash Wheel") %>%
+  janitor::clean_names() %>%
+  select(-(x15:x17)) %>%
+  drop_na(dumpster)
+```
 
 
