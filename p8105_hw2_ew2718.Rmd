@@ -98,6 +98,7 @@ Read and clean the Mr. Trash Wheel sheet:
 
 Use a similar process to import, clean, and organize the data for Professor Trash Wheel, and combine this with the Mr. Trash Wheel dataset to produce a single tidy dataset. To keep track of which Trash Wheel is which, you may need to add an additional variable to both datasets before combining.
 
+Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in the resulting dataset, and give examples of key variables. For available data, what was the total weight of trash collected by Professor Trash Wheel? What was the total number of sports balls collected by Mr. Trash Wheel in 2020?
 ```{r}
 mr_trash = read_excel("./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = "Mr. Trash Wheel") %>%
   janitor::clean_names() %>%
@@ -117,7 +118,81 @@ prof_trash = read_excel("./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sh
   select(which_trash, everything())
 
 #let's combine the data sets
-trash_data = full_join(mr_trash, prof_trash, by = "which_trash")
+trash_data = rbind(mr_trash, prof_trash)
 ```
 
-  
+#Problem 3
+
+First, clean the data in pols-month.csv. Use separate() to break up the variable mon into integer variables year, month, and day; replace month number with month name; create a president variable taking values gop and dem, and remove prez_dem and prez_gop; and remove the day variable.
+
+```{r}
+pols_month = read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>%
+  janitor::clean_names() %>%
+  separate(col = mon, into = c('year', 'month', 'day'), sep = '-') %>%
+  mutate(month = case_when(
+    month == 01 ~ "January",
+    month == 02 ~ "February",
+    month == 03 ~ "March",
+    month == 04 ~ "April",
+    month == 05 ~ "May",
+    month == 06 ~ "June",
+    month == 07 ~ "July",
+    month == 08 ~ "August",
+    month == 09 ~ "September",
+    month == 10 ~ "October",
+    month == 11 ~ "November",
+    month == 12 ~ "December")
+  ) %>% 
+  mutate(president = prez_gop + prez_dem) %>%
+  select(-prez_dem, -prez_gop, -day)
+                                    ###something going on with the months, not sure why I get NA
+```
+
+Second, clean the data in snp.csv using a similar process to the above. For consistency across datasets, arrange according to year and month, and organize so that year and month are the leading columns.
+
+```{r}
+snp = read_csv("./data/fivethirtyeight_datasets/snp.csv") %>%
+  janitor::clean_names() %>%
+  separate(col = date, into = c('month', 'day', 'year'), sep = '/') %>% 
+  mutate(month = case_when(
+    month == 1 ~ "January",
+    month == 2 ~ "February",
+    month == 3 ~ "March",
+    month == 4 ~ "April",
+    month == 5 ~ "May",
+    month == 6 ~ "June",
+    month == 7 ~ "July",
+    month == 8 ~ "August",
+    month == 9 ~ "September",
+    month == 10 ~ "October",
+    month == 11 ~ "November",
+    month == 12 ~ "December")
+  )  %>% 
+  select(-day) %>% 
+  select(year, month, everything()) %>% 
+                                        ####the year is in two digits, have to make it 4 somehow
+```
+
+Third, tidy the unemployment data so that it can be merged with the previous datasets. This process will involve switching from “wide” to “long” format; ensuring that key variables have the same name; and ensuring that key variables take the same values.
+```{r}
+unemployment_data = read_csv("./data/fivethirtyeight_datasets/unemployment.csv") %>% 
+  janitor::clean_names() %>%
+  pivot_longer(jan:dec, 
+               names_to = "month",
+               values_to = "unemployment_percent") %>% 
+  mutate(month = case_when(
+    month == "jan" ~ "January",
+    month == "feb" ~ "February",
+    month == "mar" ~ "March",
+    month == "apr" ~ "April",
+    month == "may" ~ "May",
+    month == "jun" ~ "June",
+    month == "jul" ~ "July",
+    month == "aug" ~ "August",
+    month == "sep" ~ "September",
+    month == "oct" ~ "October",
+    month == "nov" ~ "November",
+    month == "dec" ~ "December"
+  ))
+```
+
