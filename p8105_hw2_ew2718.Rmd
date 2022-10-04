@@ -1,6 +1,6 @@
 ---
-title: "p8105_hw2_ew2718"
-author: "Emma Warshaw"
+title: "P8105 Homework 2"
+author: "Emma Warshaw, UNI: ew2718"
 date: "2022-10-01"
 output: github_document
 ---
@@ -18,8 +18,7 @@ janitor::clean_names() %>%
     line, station_name, station_latitude, station_longitude, route1:route11, entry, vending, entrance_type, ada) %>% 
   mutate(
     entry = ifelse(entry == "Yes", TRUE, FALSE) 
-  ) %>% 
-nyc_transit_raw
+  )
 ```
 
 Is this data tidy? 
@@ -81,6 +80,7 @@ nyc_transit_raw %>%
 ```
 
 #Problem 2
+
 We'll be using an excel file, so load in the appropriate library: 
 
 ```{r}
@@ -119,7 +119,17 @@ prof_trash = read_excel("./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sh
 
 #let's combine the data sets
 trash_data = rbind(mr_trash, prof_trash)
+
+#Calculate total weight of trash collected by Professor Trash Wheel
+sum(prof_trash$weight_tons)
+
+#Calculate the total number of sports ball collected by Mr. Trash Wheel in 2020
+sum(mr_trash[which(mr_trash$year == 2020), "sports_balls"])
 ```
+
+Paragraph about this data: 
+
+Professor Trash Wheel collected a total weight of 135.5 tons of trash.  In the year 2020, Mr. Trash Wheel collected a total of 856 sports balls.  The resulting combined data frame had a total is 524 observations with 15 variables.  When cleaning this data, I decided to leave the year. month, and date columns.  Although there is redundant information in this, I think it can be useful.  For instance, trying to sum the number of sports balls collected in 2020 was made easier by still having the `year` as a variable. I could technically split the `date` variable into corresponding pieces, but for purposes of this cleaning, I didn't see the merit in additional code.  If I was doing more with this data set, I might consider it if it became functionally necessary.  
 
 #Problem 3
 
@@ -129,23 +139,24 @@ First, clean the data in pols-month.csv. Use separate() to break up the variable
 pols_month = read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>%
   janitor::clean_names() %>%
   separate(col = mon, into = c('year', 'month', 'day'), sep = '-') %>%
+  mutate(month = as.integer(month)) %>%
   mutate(month = case_when(
-    month == 01 ~ "January",
-    month == 02 ~ "February",
-    month == 03 ~ "March",
-    month == 04 ~ "April",
-    month == 05 ~ "May",
-    month == 06 ~ "June",
-    month == 07 ~ "July",
-    month == 08 ~ "August",
-    month == 09 ~ "September",
+    month == 1 ~ "January",
+    month == 2 ~ "February",
+    month == 3 ~ "March",
+    month == 4 ~ "April",
+    month == 5 ~ "May",
+    month == 6 ~ "June",
+    month == 7 ~ "July",
+    month == 8 ~ "August",
+    month == 9 ~ "September",
     month == 10 ~ "October",
     month == 11 ~ "November",
-    month == 12 ~ "December")
-  ) %>% 
+    month == 12 ~ "December"
+  )) %>% 
   mutate(president = prez_gop + prez_dem) %>%
   select(-prez_dem, -prez_gop, -day)
-                                    ###something going on with the months, not sure why I get NA
+                                ### also check why certain presidents are 2
 ```
 
 Second, clean the data in snp.csv using a similar process to the above. For consistency across datasets, arrange according to year and month, and organize so that year and month are the leading columns.
@@ -167,9 +178,12 @@ snp = read_csv("./data/fivethirtyeight_datasets/snp.csv") %>%
     month == 10 ~ "October",
     month == 11 ~ "November",
     month == 12 ~ "December")
-  )  %>% 
+  ) %>% 
   select(-day) %>% 
   select(year, month, everything()) %>% 
+  mutate(year_4dig = 
+          if_else(year >= 50 & year <= 99, +1900), 
+         if_else(year >= 00 & year <= 15), +2000) 
                                         ####the year is in two digits, have to make it 4 somehow
 ```
 
