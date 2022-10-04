@@ -8,7 +8,7 @@ output: github_document
 library(tidyverse)
 ```
 
-#Problem 1
+**Problem 1**
 ```{r}
 nyc_transit_raw = 
   read_csv("./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv",
@@ -79,7 +79,7 @@ nyc_transit_raw %>%
   distinct
 ```
 
-#Problem 2
+**Problem 2**
 
 We'll be using an excel file, so load in the appropriate library: 
 
@@ -100,25 +100,26 @@ Use a similar process to import, clean, and organize the data for Professor Tras
 
 Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in the resulting dataset, and give examples of key variables. For available data, what was the total weight of trash collected by Professor Trash Wheel? What was the total number of sports balls collected by Mr. Trash Wheel in 2020?
 ```{r}
-mr_trash = read_excel("./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = "Mr. Trash Wheel") %>%
+mr_trash = read_excel("./data/Trash Wheel Collection Data.xlsx", sheet = "Mr. Trash Wheel") %>%
   janitor::clean_names() %>%
-  select(-(x15:x17)) %>%
+  select(-(x15:x16)) %>%
   drop_na(dumpster) %>%
   drop_na(month) %>% 
   mutate(
     sports_balls = round(sports_balls, digits = 0)) %>% 
   mutate(which_trash = "Mr. Trash") %>% 
-  select(which_trash, everything())
+  select(which_trash, everything()) %>%
+  mutate(year = as.integer(year))
 
 #start on professor trash
-prof_trash = read_excel("./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = "Professor Trash Wheel") %>% 
+prof_trash = read_excel("./data/Trash Wheel Collection Data.xlsx", sheet = "Professor Trash Wheel") %>% 
   janitor::clean_names() %>%
   drop_na(dumpster) %>%
   mutate(which_trash = "Prof. Trash") %>% 
   select(which_trash, everything())
 
 #let's combine the data sets
-trash_data = rbind(mr_trash, prof_trash)
+trash_data = full_join(mr_trash, prof_trash)
 
 #Calculate total weight of trash collected by Professor Trash Wheel
 sum(prof_trash$weight_tons)
@@ -129,9 +130,9 @@ sum(mr_trash[which(mr_trash$year == 2020), "sports_balls"])
 
 Paragraph about this data: 
 
-Professor Trash Wheel collected a total weight of 135.5 tons of trash.  In the year 2020, Mr. Trash Wheel collected a total of 856 sports balls.  The resulting combined data frame had a total is 524 observations with 15 variables.  When cleaning this data, I decided to leave the year. month, and date columns.  Although there is redundant information in this, I think it can be useful.  For instance, trying to sum the number of sports balls collected in 2020 was made easier by still having the `year` as a variable. I could technically split the `date` variable into corresponding pieces, but for purposes of this cleaning, I didn't see the merit in additional code.  If I was doing more with this data set, I might consider it if it became functionally necessary.  
+Professor Trash Wheel collected a total weight of 190.12 tons of trash.  In the year 2020, Mr. Trash Wheel collected a total of 856 sports balls.  The resulting combined data frame had a total is 524 observations with 15 variables.  When cleaning this data, I decided to leave the year. month, and date columns.  Although there is redundant information in this, I think it can be useful.  For instance, trying to sum the number of sports balls collected in 2020 was made easier by still having the `year` as a variable. I could technically split the `date` variable into corresponding pieces, but for purposes of this cleaning, I didn't see the merit in additional code.  If I was doing more with this data set, I might consider it if it became functionally necessary.  
 
-#Problem 3
+**Problem 3**
 
 First, clean the data in pols-month.csv. Use separate() to break up the variable mon into integer variables year, month, and day; replace month number with month name; create a president variable taking values gop and dem, and remove prez_dem and prez_gop; and remove the day variable.
 
@@ -154,9 +155,9 @@ pols_month = read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>%
     month == 11 ~ "November",
     month == 12 ~ "December"
   )) %>% 
-  mutate(president = prez_gop + prez_dem) %>%
-  select(-prez_dem, -prez_gop, -day)
-                                ### also check why certain presidents are 2
+  mutate(president = case_when
+         (prez_dem == 1 ~ "dem", prez_gop > 0 ~ "gop", TRUE ~ "")) %>% 
+    mutate(year = as.integer(year))
 ```
 
 Second, clean the data in snp.csv using a similar process to the above. For consistency across datasets, arrange according to year and month, and organize so that year and month are the leading columns.
@@ -181,10 +182,8 @@ snp = read_csv("./data/fivethirtyeight_datasets/snp.csv") %>%
   ) %>% 
   select(-day) %>% 
   select(year, month, everything()) %>% 
-  mutate(year_4dig = 
-          if_else(year >= 50 & year <= 99, +1900), 
-         if_else(year >= 00 & year <= 15), +2000) 
-                                        ####the year is in two digits, have to make it 4 somehow
+  mutate(year = as.integer(year)) %>% 
+  mutate(year = ifelse(year >= 50, year + 1900, year + 2000))
 ```
 
 Third, tidy the unemployment data so that it can be merged with the previous datasets. This process will involve switching from “wide” to “long” format; ensuring that key variables have the same name; and ensuring that key variables take the same values.
@@ -210,3 +209,11 @@ unemployment_data = read_csv("./data/fivethirtyeight_datasets/unemployment.csv")
   ))
 ```
 
+Join the datasets by merging snp into pols, and merging unemployment into the result.
+```{r}
+combo_data = left_join(pols_month, snp, by = c("year", "month"))
+combo_final = left_join(combo_data, unemployment_data, by = c("year", "month"))
+```
+Write a short paragraph about these datasets. Explain briefly what each dataset contained, and describe the resulting dataset (e.g. give the dimension, range of years, and names of key variables).
+
+The final data set `combo_final` describes the number of elected officials (president, governor, senator, house representative) by party affiliation (democrat or gop), the S&P 500 closing values, and unemployment rates for each month in the years between 1947 and 2015.  The resulting data frame has 11 variables and 822 rows.  The `pols_month` data set describes the year, month, and corresponding number of elected officials by party affiliation.  In the `pols_month` data set, the `prez_gop` variable has a `2` as the data point for rows in the year `1974`.  This corresponds to Richard Nixon's presidency, his removal from office, and the start of Gerald Ford's presidency that same year.  The `snp` data set contains the month, year, and corresponding close values of the S&P 500.  The `unemployment_data` set contains the month, year and corresponding unemplyment percentage.       
